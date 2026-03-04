@@ -43,4 +43,5 @@ python gui.py
 ```
 
 Lab Context
-Developed for the Golshani Lab to enable native, offline processing of voltage imaging data. Includes specific protocols for habituation, treadmill rigging, and behavioral data collection.
+
+Developed for the Golshani Lab at UCLA David Geffen School of Medicine to enable native, offline processing of voltage imaging data. Includes specific protocols for habituation, treadmill rigging, and behavioral data collection.
