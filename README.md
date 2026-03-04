@@ -35,7 +35,7 @@ cd VIPER-Mac-Port
 python -m venv venv 
 source venv/bin/activate
 ```
-2. Install & Launch
+### 2. Install & Launch
 ```bash
 pip install -r requirements.txt
 python gui.py
