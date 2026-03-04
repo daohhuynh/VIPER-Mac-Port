@@ -29,13 +29,18 @@ Automated Ingestion: Refactored the file import logic to automatically detect an
 Dependency Refactoring: Stripped 20+ Windows/NVIDIA-specific version locks (CUDA, CuPy, pywin32) and refactored the environment for cross-platform portability, reducing the setup time from hours to minutes.
 
 Quick Start
-1. Setup Environment
-git clone https://github.com/daohhuynh/VIPER-Mac-Port.git
-cd VIPER-Mac-Port
-python -m venv venv
+### 1. Setup Environment 
+```bash
+git clone [https://github.com/daohhuynh/VIPER-Mac-Port.git](https://github.com/daohhuynh/VIPER-Mac-Port.git) 
+cd VIPER-Mac-Port 
+python -m venv venv 
 source venv/bin/activate
+```
 2. Install & Launch
+```bash
 pip install -r requirements.txt
 python gui.py
-📋 Lab Context
+```
+
+Lab Context
 Developed for the Golshani Lab to enable native, offline processing of voltage imaging data. Includes specific protocols for habituation, treadmill rigging, and behavioral data collection.
