@@ -22,6 +22,12 @@ Asynchronous I/O: Utilizes dedicated QThreads for TIF ingestion and registration
 
 Numerical Stability: Uses a float64 accumulation buffer to prevent precision overflow during large-scale temporal averaging of float16 raw data.
 
+Normalization & Visualization: Resolved a "white rectangle" rendering bug caused by bit-depth dynamic range mismatches on macOS by implementing a 99.9th percentile normalization algorithm, making voltage spikes and neural activity visible on standard displays.
+
+Automated Ingestion: Refactored the file import logic to automatically detect and stack disparate TIFF files into a unified 3D volume, preventing system crashes during non-stacked data loads.
+
+Dependency Refactoring: Stripped 20+ Windows/NVIDIA-specific version locks (CUDA, CuPy, pywin32) and refactored the environment for cross-platform portability, reducing the setup time from hours to minutes.
+
 Quick Start
 1. Setup Environment
 git clone https://github.com/daohhuynh/VIPER-Mac-Port.git
