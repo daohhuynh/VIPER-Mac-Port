@@ -11,3 +11,4 @@ Install packages with: pip install -r requirements.txt
 
 Finally, run the code on the command line by running the GUI script: python ~/PATH/TO/FILE/GUI_[version].py
 # VIPER-Mac-Port
+Now runs natively on Mac Silicon!
