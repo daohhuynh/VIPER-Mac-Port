@@ -11,4 +11,26 @@ Install packages with: pip install -r requirements.txt
 
 Finally, run the code on the command line by running the GUI script: python ~/PATH/TO/FILE/GUI_[version].py
 # VIPER-Mac-Port
-Now runs natively on Mac Silicon!
+This version has been refactored and optimized for local execution on Apple Silicon (M Chips) hardware:
+
+Hardware Acceleration: Integrated PyTorch MPS (Metal Performance Shaders) to offload neural network segmentation (Cellpose) to the Mac GPU, bypassing legacy CUDA dependencies.
+
+Out-of-Core Processing: Implemented a chunked memory accumulator using Zarr to process datasets exceeding 100,000+ frames without exceeding system RAM limits.
+
+Asynchronous I/O: Utilizes dedicated QThreads for TIF ingestion and registration to ensure the PyQt5/PyQtGraph interface remains responsive during heavy computation.
+
+Numerical Stability: Uses a float64 accumulation buffer to prevent precision overflow during large-scale temporal averaging of float16 raw data.
+
+Quick Start
+1. Setup Environment
+Bash
+git clone https://github.com/daohhuynh/VIPER-Mac-Port.git
+cd VIPER-Mac-Port
+python -m venv venv
+source venv/bin/activate
+2. Install & Launch
+Bash
+pip install -r requirements.txt
+python gui.py
+📋 Lab Context
+Developed for the Golshani Lab to enable native, offline processing of voltage imaging data. Includes specific protocols for habituation, treadmill rigging, and behavioral data collection.
