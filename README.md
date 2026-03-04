@@ -10,6 +10,7 @@ Activate the environment by running: source /path/to/new/virtual/environment/ven
 Install packages with: pip install -r requirements.txt
 
 Finally, run the code on the command line by running the GUI script: python ~/PATH/TO/FILE/GUI_[version].py
+
 # VIPER-Mac-Port
 This version has been refactored and optimized for local execution on Apple Silicon (M Chips) hardware:
 
@@ -23,13 +24,11 @@ Numerical Stability: Uses a float64 accumulation buffer to prevent precision ove
 
 Quick Start
 1. Setup Environment
-Bash
 git clone https://github.com/daohhuynh/VIPER-Mac-Port.git
 cd VIPER-Mac-Port
 python -m venv venv
 source venv/bin/activate
 2. Install & Launch
-Bash
 pip install -r requirements.txt
 python gui.py
 📋 Lab Context
