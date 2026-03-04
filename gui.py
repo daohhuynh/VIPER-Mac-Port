@@ -942,72 +942,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.importDataThread.start()
     
     def dataImportedDialog(self):
-        rawFilePath = self.importFilePath
-        print(f"DEBUG: Checking path: {rawFilePath}")
+        self.loadingLabel.setText("Processing TIF Stack (Please wait...)")
+        self.loadingLabel.setAlignment(QtCore.Qt.AlignCenter)
         
-        if os.path.isdir(rawFilePath):
-            print("DEBUG: Detected folder input. Stacking image sequence...")
-            tiff_files = sorted(glob.glob(os.path.join(rawFilePath, "*.tif")))
-            
-            if len(tiff_files) == 0:
-                tiff_files = sorted(glob.glob(os.path.join(rawFilePath, "*.tiff")))
-            
-            print(f"DEBUG: Found {len(tiff_files)} frames.")
-            
-            if len(tiff_files) > 0:
-                volume = tif.imread(tiff_files)
-                
-                # --- PULSE CHECK (Are the frames actually frozen?) ---
-                if len(volume) > 2000:
-                    # Check difference between frame 2000 and 2001
-                    diff = np.sum(np.abs(volume[2000].astype(int) - volume[2001].astype(int)))
-                    print(f"DEBUG: PULSE CHECK -> Difference between Frame 2000 and 2001: {diff}")
-                    if diff == 0:
-                        print("WARNING: These two frames are IDENTICAL clones.")
-                    else:
-                        print("SUCCESS: The frames are changing! (Movement detected)")
+        self.tiffThread = TiffProcessingThread(self.importFilePath)
+        self.tiffThread.finished_processing.connect(self.tiffProcessingComplete)
+        self.tiffThread.start()
 
-                # --- ROBUST PERCENTILE SCALING ---
-                print("DEBUG: Applying 99.9% Percentile Scaling...")
-                volume = volume.astype(np.float16)
-                
-                # 1. Subtract Background
-                min_val = np.min(volume)
-                volume -= min_val
-                
-                # 2. Find the 99.9th Percentile (The "Real" Max, ignoring artifacts)
-                # This ignores the top 0.1% of brightest pixels (the flashbangs)
-                p_high = np.percentile(volume, 99.9)
-                print(f"DEBUG: 99.9th Percentile is {p_high}. (Anything brighter is clipped)")
-                
-                if p_high > 0:
-                    volume = np.clip(volume, 0, p_high)
-                    volume /= p_high
-                
-                print("DEBUG: Normalization Complete.")
-                
-                zarr_path = os.path.join(rawFilePath, 'converted.zarr')
-                self.rawData = zarr.open_array(zarr_path, mode='w', shape=volume.shape, chunks=(100, None, None), dtype=volume.dtype)
-                self.rawData[:] = volume
-                print("DEBUG: Sequence converted to Zarr successfully.")
-            else:
-                print("ERROR: No TIF files found!")
-                return
+    @QtCore.pyqtSlot(int)
+    def tiffProcessingComplete(self, data_size):
+        if data_size == 0:
+            print("ERROR: Processing failed or no TIF files found.")
+            return
+
+        zarr_path = os.path.join(self.importFilePath, 'converted.zarr')
+        if os.path.exists(zarr_path):
+            self.rawData = zarr.open_array(zarr_path, mode='a')
         else:
-            print("DEBUG: Detected single file input.")
-            self.rawData = zarr.open_array(rawFilePath, mode='a')
+            self.rawData = zarr.open_array(self.importFilePath, mode='a')
 
-        self.dataSize = self.rawData.shape[0]
+        self.dataSize = data_size
         print(f"DEBUG: set dataSize to {self.dataSize}")
 
         self.mediaSlider_2.setMinimum(0)
         self.mediaSlider_2.setMaximum(self.dataSize - 1)
         self.mediaSlider_2.setEnabled(True)
         
-        # 0 = Import, 1 = Registration, 2 = Segmentation, 3 = Extraction
         self.VoltagePipelineTabWidget.setTabEnabled(1, True)
         self.VoltagePipelineTabWidget.setTabEnabled(2, True)
         self.VoltagePipelineTabWidget.setTabEnabled(3, True)
+        self.loadingLabel.setText("Ready")
         print("DEBUG: Pipeline tabs unlocked.")
         
     def dataImportErrorDialog(self, errorMessage):
@@ -1189,14 +1153,21 @@ class MainWindow(QtWidgets.QMainWindow):
     #    self.remappedData = zarr.open(remapPath,mode="r")
 
     def nextToSegmentation(self):
-        if len(self.registeredData) > 2000:
-            self.averageImageRegistered = np.average(self.registeredData[0:2000], axis = 0)
-        else:
-            self.averageImageRegistered = np.average(self.registeredData, axis = 0)
-        self.applyModel.setEnabled(True)
-        self.segmentedContours.setImage(self.averageImageRegistered, axes = {'x':1, 'y':0},autoLevels = True)
-        self.VoltagePipelineTabWidget.setCurrentIndex(self.TabIndices("SegmentationTab"))
+        total_frames = len(self.registeredData)
+        chunk_size = 100
+        
+        accumulator = np.zeros(self.registeredData[0].shape, dtype=np.float64)
+        
+        for i in range(0, total_frames, chunk_size):
+            end = min(i + chunk_size, total_frames)
+            chunk = self.registeredData[i:end]
+            accumulator += np.sum(chunk, axis=0)
+            
+        self.averageImageRegistered = accumulator / total_frames
 
+        self.applyModel.setEnabled(True)
+        self.segmentedContours.setImage(self.averageImageRegistered, axes = {'x':1, 'y':0}, autoLevels = True)
+        self.VoltagePipelineTabWidget.setCurrentIndex(self.TabIndices("SegmentationTab"))
 
     def saveRegisteredData(self):
         
@@ -1308,7 +1279,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         model_type="cyto3",
                         channels=[0,0],  # Grayscale images
                         diameter=30.0,   # Expected cell diameter in pixels
-                        gpu=False       # Use CPU
+                        gpu=True       # Use CPU
                         )
             seg_results = cellpose.process_image(self.averageImageRegistered)
             num_cell_detected = np.amax(seg_results['masks'])
@@ -1814,6 +1785,41 @@ class ExtractionThread(QtCore.QThread):
         
         self.finished.emit("finished extraction")
 
+class TiffProcessingThread(QtCore.QThread):
+    finished_processing = QtCore.pyqtSignal(int)
+
+    def __init__(self, rawFilePath):
+        super().__init__()
+        self.rawFilePath = rawFilePath
+
+    def run(self):
+        data_size = 0
+        if os.path.isdir(self.rawFilePath):
+            tiff_files = sorted(glob.glob(os.path.join(self.rawFilePath, "*.tif")))
+            if len(tiff_files) == 0:
+                tiff_files = sorted(glob.glob(os.path.join(self.rawFilePath, "*.tiff")))
+            
+            if len(tiff_files) > 0:
+                volume = tif.imread(tiff_files)
+                volume = volume.astype(np.float16)
+                
+                min_val = np.min(volume)
+                volume -= min_val
+                
+                p_high = np.percentile(volume, 99.9)
+                if p_high > 0:
+                    volume = np.clip(volume, 0, p_high)
+                    volume /= p_high
+                
+                zarr_path = os.path.join(self.rawFilePath, 'converted.zarr')
+                zarr_array = zarr.open_array(zarr_path, mode='w', shape=volume.shape, chunks=True, dtype=volume.dtype)
+                zarr_array[:] = volume
+                data_size = volume.shape[0]
+        else:
+            zarr_array = zarr.open_array(self.rawFilePath, mode='a')
+            data_size = zarr_array.shape[0]
+
+        self.finished_processing.emit(data_size)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
