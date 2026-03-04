@@ -28,7 +28,7 @@ Automated Ingestion: Refactored the file import logic to automatically detect an
 
 Dependency Refactoring: Stripped 20+ Windows/NVIDIA-specific version locks (CUDA, CuPy, pywin32) and refactored the environment for cross-platform portability, reducing the setup time from hours to minutes.
 
-# Quick Start
+Quick Start
 ### 1. Setup Environment 
 ```bash
 git clone [https://github.com/daohhuynh/VIPER-Mac-Port.git](https://github.com/daohhuynh/VIPER-Mac-Port.git) 
