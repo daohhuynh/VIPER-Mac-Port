@@ -1,9 +1,11 @@
 # Voltage Imaging Processing Execution Routines (VIPER) 
+Developed for the Golshani Lab at UCLA David Geffen School of Medicine to enable native, offline processing of voltage imaging data. 
+
 Offline Pipeline for Voltage Image Processing: https://docs.google.com/presentation/d/1i1Eehe1vd-wUmb5itjOlRDMwH4RwgGJKw7-UGQe_Prk/edit?usp=sharing
 
 To utilize the scripts in the repository download Python.
 
-Clone the repository on your device, cd into it, and create a virtual envirnoment: python -m venv /path/to/new/virtual/environment
+Clone the repository on your device, cd into it, and create a virtual environment: python -m venv /path/to/new/virtual/environment
 
 Activate the environment by running: source /path/to/new/virtual/environment/venv/bin/activate
 
@@ -40,6 +42,3 @@ source venv/bin/activate
 pip install -r requirements.txt
 python gui.py
 ```
-
-
-Developed for the Golshani Lab at UCLA David Geffen School of Medicine to enable native, offline processing of voltage imaging data. Includes specific protocols for habituation, treadmill rigging, and behavioral data collection.
