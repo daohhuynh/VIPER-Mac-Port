@@ -7,7 +7,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import tifffile as tif
 import os
-import shutil # Folder removal so we don't have to write code with os that recursively does it
+import shutil
 import pyqtgraph as pg
 import zarr
 import numpy as np
